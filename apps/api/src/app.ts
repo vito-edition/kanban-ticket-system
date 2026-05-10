@@ -8,6 +8,7 @@ import { env } from "./config/env";
 import { requestLogger } from "./middleware/requestLogger";
 import { globalRateLimiter } from "./middleware/rateLimiter";
 import { sanitizeBody } from "./middleware/sanitize";
+import { requestId } from "./middleware/requestId";
 import { errorHandler } from "./middleware/errorHandler";
 import { notFoundHandler } from "./middleware/notFound";
 
@@ -20,6 +21,9 @@ import labelRoutes from "./routes/label.routes";
 import commentRoutes from "./routes/comment.routes";
 
 const app = express();
+
+// ── Request ID ───────────────────────────────────────────────────────────────
+app.use(requestId);
 
 // ── Security headers ──────────────────────────────────────────────────────────
 app.use(
