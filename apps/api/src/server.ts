@@ -7,6 +7,7 @@ import { logger } from "./config/logger";
 import { connectDatabase, disconnectDatabase } from "./config/database";
 import { connectRedis, disconnectRedis } from "./config/redis";
 import { registerSocketHandlers } from "./services/socket.service";
+import { startSlaChecker } from "./services/sla.service";
 
 const httpServer = createServer(app);
 
@@ -27,6 +28,8 @@ async function bootstrap(): Promise<void> {
   httpServer.listen(env.API_PORT, () => {
     logger.info(`API server running on port ${env.API_PORT} [${env.NODE_ENV}]`);
   });
+
+  startSlaChecker();
 }
 
 // ── Graceful shutdown ─────────────────────────────────────────────────────────

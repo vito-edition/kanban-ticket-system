@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import { env } from "./config/env";
 import { requestLogger } from "./middleware/requestLogger";
 import { globalRateLimiter } from "./middleware/rateLimiter";
+import { sanitizeBody } from "./middleware/sanitize";
 import { errorHandler } from "./middleware/errorHandler";
 import { notFoundHandler } from "./middleware/notFound";
 
@@ -43,6 +44,9 @@ app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
+
+// ── Input sanitization ────────────────────────────────────────────────────────
+app.use(sanitizeBody);
 
 // ── Logging ───────────────────────────────────────────────────────────────────
 app.use(requestLogger);
