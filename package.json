@@ -1,0 +1,46 @@
+{
+  "name": "kanban-ticket-system",
+  "version": "1.0.0",
+  "description": "Production-ready Kanban board and ticket management system",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm run dev --workspace=apps/api\" \"npm run dev --workspace=apps/web\"",
+    "build": "npm run build --workspace=packages/shared && npm run build --workspace=apps/api && npm run build --workspace=apps/web",
+    "test": "npm run test --workspaces --if-present",
+    "test:coverage": "npm run test:coverage --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "lint:fix": "npm run lint:fix --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:migrate": "npm run db:migrate --workspace=apps/api",
+    "db:migrate:prod": "npm run db:migrate:prod --workspace=apps/api",
+    "db:seed": "npm run db:seed --workspace=apps/api",
+    "db:studio": "npm run db:studio --workspace=apps/api",
+    "db:reset": "npm run db:reset --workspace=apps/api",
+    "docker:dev": "docker compose up -d",
+    "docker:prod": "docker compose -f docker-compose.prod.yml up -d",
+    "docker:down": "docker compose down",
+    "prepare": "node -e \"try{require('husky').install()}catch(e){}\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "husky": "^9.1.0",
+    "lint-staged": "^15.2.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}

@@ -1,0 +1,95 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Environment variables - NEVER commit these
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.staging
+.env.test
+
+# Build output
+dist/
+build/
+out/
+.next/
+.nuxt/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+prisma/migrations/dev/
+
+# Coverage reports
+coverage/
+*.lcov
+.nyc_output/
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+
+# IDE / Editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Docker volumes (local)
+.docker/volumes/
+
+# SSL Certificates (private keys)
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+!.docker/nginx/certs/.gitkeep
+
+# Private keys and tokens
+*.secret
+*.token
+*.private
+
+# Database dumps
+*.dump
+*.sql.gz
+*.bak
+
+# Upload temp files
+uploads/tmp/
+/tmp/
+
+# Test artifacts
+*.snap
+e2e-results/
+playwright-report/
+
+# PM2
+.pm2/
+
+# Package manager locks (keep only one)
+yarn.lock
+package-lock.json
