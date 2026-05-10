@@ -1,0 +1,18 @@
+FROM node:20-alpine
+
+RUN apk add --no-cache curl
+
+WORKDIR /app
+
+COPY package*.json ./
+COPY prisma ./prisma/
+
+RUN npm install
+
+COPY . .
+
+RUN npm run db:generate 2>/dev/null || true
+
+EXPOSE 4000
+
+CMD ["npm", "run", "dev"]
