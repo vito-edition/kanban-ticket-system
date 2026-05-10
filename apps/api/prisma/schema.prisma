@@ -1,0 +1,278 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Users & Auth
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         UserRole @default(MEMBER)
+  avatarUrl    String?
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  refreshTokens  RefreshToken[]
+  boardMembers   BoardMember[]
+  assignedTickets Ticket[]      @relation("TicketAssignee")
+  createdTickets  Ticket[]      @relation("TicketCreator")
+  comments        Comment[]
+  auditLogs       AuditLog[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  revoked   Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  MEMBER
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Boards
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Board {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  slug        String      @unique
+  isPublic    Boolean     @default(false)
+  color       String      @default("#6366f1")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  members  BoardMember[]
+  columns  Column[]
+  labels   Label[]
+  tickets  Ticket[]
+
+  @@index([slug])
+  @@map("boards")
+}
+
+model BoardMember {
+  id        String          @id @default(uuid())
+  boardId   String
+  userId    String
+  role      BoardMemberRole @default(MEMBER)
+  joinedAt  DateTime        @default(now())
+
+  board Board @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([boardId, userId])
+  @@index([boardId])
+  @@index([userId])
+  @@map("board_members")
+}
+
+enum BoardMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Columns (Kanban swimlanes)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Column {
+  id         String   @id @default(uuid())
+  boardId    String
+  name       String
+  position   Int
+  color      String?
+  isDefault  Boolean  @default(false)
+  wipLimit   Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  board   Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tickets Ticket[]
+
+  @@index([boardId, position])
+  @@map("columns")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tickets
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Ticket {
+  id          String         @id @default(uuid())
+  boardId     String
+  columnId    String
+  creatorId   String
+  assigneeId  String?
+  title       String
+  description String?
+  position    Int
+  priority    TicketPriority @default(MEDIUM)
+  status      TicketStatus   @default(TODO)
+  storyPoints Int?
+  dueDate     DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  slaDeadline DateTime?
+  slaBreached Boolean        @default(false)
+  isArchived  Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  board    Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  column   Column   @relation(fields: [columnId], references: [id])
+  creator  User     @relation("TicketCreator", fields: [creatorId], references: [id])
+  assignee User?    @relation("TicketAssignee", fields: [assigneeId], references: [id])
+
+  labels      TicketLabel[]
+  comments    Comment[]
+  attachments Attachment[]
+  auditLogs   AuditLog[]
+
+  @@index([boardId])
+  @@index([columnId, position])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([priority])
+  @@index([dueDate])
+  @@map("tickets")
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum TicketStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  DONE
+  CANCELLED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Labels
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Label {
+  id      String @id @default(uuid())
+  boardId String
+  name    String
+  color   String @default("#6366f1")
+
+  board   Board         @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  tickets TicketLabel[]
+
+  @@unique([boardId, name])
+  @@index([boardId])
+  @@map("labels")
+}
+
+model TicketLabel {
+  ticketId String
+  labelId  String
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  label  Label  @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@id([ticketId, labelId])
+  @@map("ticket_labels")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Comments
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Comment {
+  id        String   @id @default(uuid())
+  ticketId  String
+  authorId  String
+  content   String
+  isEdited  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author User   @relation(fields: [authorId], references: [id])
+
+  @@index([ticketId])
+  @@map("comments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Attachments
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Attachment {
+  id         String   @id @default(uuid())
+  ticketId   String
+  filename   String
+  mimeType   String
+  sizeBytes  Int
+  url        String
+  createdAt  DateTime @default(now())
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+  @@map("attachments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Audit Log
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  ticketId   String?
+  action     String
+  entityType String
+  entityId   String
+  oldValue   Json?
+  newValue   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  ticket Ticket? @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@index([ticketId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
